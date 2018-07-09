@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ballerina-guides/messaging-with-jms-queues.svg?branch=master)](https://github.com/ballerina-guides/inter-microservice-communicaiton)
+[![Build Status](https://travis-ci.org/ballerina-guides/inter-microservice-communicaiton.svg?branch=master)](https://github.com/ballerina-guides/inter-microservice-communicaiton)
 
 # Inter-Process Communication in a Microservices Architecture
 
@@ -616,7 +616,7 @@ To run the unit tests, navigate to `inter-microservice-communicaiton/guide/` and
 
 When running these unit tests, make sure that the `ActiveMQ` is up and running.
 
-To check the implementation of the test file, refer to the [trip-management.bal](TODO add link).
+To check the implementation of the test file, refer to the [trip-management.bal].
 
 ## Deployment
 
