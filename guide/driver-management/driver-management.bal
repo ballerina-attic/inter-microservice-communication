@@ -59,7 +59,7 @@ service<jms:Consumer> DriverNotificationService bind jmsConsumer {
     onMessage(endpoint consumer, jms:Message message) {
         log:printInfo("Trip information received for Driver notification service notifying coordinating with Driver the trip info");
         http:Request orderToDeliver;
-        orderToDeliver.
+        //orderToDeliver.
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
         log:printInfo("Trip Details: " + personDetail);

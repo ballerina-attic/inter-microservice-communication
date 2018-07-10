@@ -20,7 +20,7 @@ import ballerina/jms;
 import ballerinax/docker;
 
 // Type definition for a book order
-type pickup {
+type Pickup {
     string customerName;
     string address;
     string phonenumber;
@@ -85,7 +85,7 @@ service<http:Service> TripManagement bind listener {
         produces: ["application/json"], path : "/pickup" }
     pickup(endpoint caller, http:Request request) {
         http:Response response;
-        pickup pickup;
+        Pickup pickup;
         json reqPayload;
 
         // Try parsing the JSON payload from the request
@@ -124,9 +124,9 @@ service<http:Service> TripManagement bind listener {
         // call passanger-management and get passagner orginization claims
         json responseMessage;
         http:Request passangermanagerReq;
-        json pickupjson = check <json>pickup;
+        json pickupjson =  check <json>pickup;
         passangermanagerReq.setJsonPayload(pickupjson);
-        http:Response passangerResponse= check passengerMgtEP -> post("/claims", request = passangermanagerReq);
+        http:Response passangerResponse=  check passengerMgtEP -> post("/claims",passangermanagerReq);
         json passangerResponseJSON = check passangerResponse.getJsonPayload();
 
         // Dispatch to the dispatcher service
