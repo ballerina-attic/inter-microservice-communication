@@ -82,8 +82,9 @@ Ballerina is a complete programming language that supports custom project struct
 
 ### Developing the service
 
-Let's get started with the implementation of the `trip-management.bal`, which acts as the middle man to coordinate the interactions between passenger management and dispatcher. 
+Let's get started with the implementation of the `trip-management.bal`, which acts as the interface to coordinate interactions between passenger management `passenger-management.bal` and  dispatcher `dispatcher.bal`. The dispatcher be act as an middleman which will coordinate Driver and Passenger. (The overall coordination seems to be very simple). However lets walk through each implementation 
 Refer to the code attached below. Inline comments added for better understanding.
+
 
 ![alt text](/images/trip-management.png)
 
@@ -203,6 +204,7 @@ service<http:Service> TripManagement bind listener {
 
 }
 ```
+To see the complete implementation of the above, refer to the [trip-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/trip-management.bal).
 
 ##### dispatcher.bal
 ![alt text](/images/dispatcher.png)
@@ -325,6 +327,7 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
     
 }
 ```
+To see the complete implementation of the above, refer to the [dispatcher.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/dispatcher.bal).
 
 
 ##### passenger-management.bal
@@ -423,6 +426,7 @@ service<jms:Consumer> PassengerNotificationService bind jmsConsumer {
     
 }
 ```
+To see the complete implementation of the above, refer to the [passenger-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/passenger-management.bal).
 
 
 
