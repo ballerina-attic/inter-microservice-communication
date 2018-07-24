@@ -19,8 +19,11 @@ import ballerina/test;
 
 @test:BeforeSuite
 function beforeFunc() {
-    // Start the 'trip-management' before running the test
+    // Start services before running the test
     _ = test:startServices("trip-management");
+    _ = test:startServices("dispatcher");
+    _ = test:startServices("driver-management");
+    _ = test:startServices("passenger-management");
 }
 
 // Client endpoint
@@ -50,6 +53,9 @@ function testResourcePickup() {
 
 @test:AfterSuite
 function afterFunc() {
-    // Start the 'trip-management' before running the test
-    test:stopServices("trip-management");
+    // shutdown services
+    _ = test:stopServices("trip-management");
+    _ = test:stopServices("dispatcher");
+    _ = test:stopServices("driver-management");
+    _ = test:stopServices("passenger-management");
 }
