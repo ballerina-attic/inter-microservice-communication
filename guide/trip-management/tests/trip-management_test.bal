@@ -20,7 +20,7 @@ import ballerina/test;
 @test:BeforeSuite
 function beforeFunc() {
     // Start services before running the test
-    _ = test:startServices("trip-management");
+    //_ = test:startServices("trip-management");
     _ = test:startServices("dispatcher");
     _ = test:startServices("driver-management");
     _ = test:startServices("passenger-management");
@@ -54,7 +54,7 @@ function testResourcePickup() {
 @test:AfterSuite
 function afterFunc() {
     // shutdown services
-    _ = test:stopServices("trip-management");
+    //_ = test:stopServices("trip-management");
     _ = test:stopServices("dispatcher");
     _ = test:stopServices("driver-management");
     _ = test:stopServices("passenger-management");
