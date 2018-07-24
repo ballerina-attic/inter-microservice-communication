@@ -18,7 +18,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person {
+type Person record {
     string name;
     string address;
     string phonenumber;
@@ -85,7 +85,7 @@ service<http:Service> PassengerManagement bind listener {
         json personjson = check <json>person;
         responseMessage = personjson;
         log:printInfo("Passanger claims included in the response:" + personjson.toString());
-        res.setJsonPayload(personjson);
+        res.setJsonPayload(untaint personjson);
         _ = caller -> respond (res);
     }
 }
