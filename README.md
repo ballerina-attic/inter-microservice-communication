@@ -96,7 +96,7 @@ import ballerina/jms;
 import ballerinax/docker;
 
 // Type definition for a book order
-type Pickup {
+type Pickup record {
     string customerName;
     string address;
     string phonenumber;
@@ -182,7 +182,7 @@ service<http:Service> TripManagement bind listener {
         json responseMessage;
         http:Request passangermanagerReq;
         json pickupjson = check <json>pickup;
-        passangermanagerReq.setJsonPayload(pickupjson);
+        passangermanagerReq.setJsonPayload(untaint pickupjson);
         http:Response passangerResponse=  check passengerMgtEP -> post("/claims",passangermanagerReq);
         json passangerResponseJSON = check passangerResponse.getJsonPayload();
 
@@ -216,7 +216,7 @@ import ballerina/jms;
 import ballerina/http;
 
 //data model Trip
-type Trip{
+type Trip record{
     string tripID;
     Driver driver;
     Person person;
@@ -224,14 +224,14 @@ type Trip{
 };
 
 //data model Driver
-type Driver{
+type Driver record{
     string driverID;
     string drivername;
 
 };
 
 //data model Person
-type Person {
+type Person record{
     string name;
     string address;
     string phonenumber;
@@ -288,7 +288,7 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         string personDetail = check message.getTextMessageContent();
         log:printInfo("person Details: " + personDetail);
         json person = <json>personDetail;
-        orderToDeliver.setJsonPayload(person);
+        orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
         //TODO fix the way to extract JSON path message from JMS message
         log:printInfo("name dd" + name);
@@ -338,7 +338,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person {
+type Person record{
     string name;
     string address;
     string phonenumber;
@@ -405,7 +405,7 @@ service<http:Service> PassengerManagement bind listener {
         json personjson = check <json>person;
         responseMessage = personjson;
         log:printInfo("Passanger claims included in the response:" + personjson.toString());
-        res.setJsonPayload(personjson);
+        res.setJsonPayload(untaint personjson);
         _ = caller -> respond (res);
     }
 }
@@ -439,7 +439,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person {
+type Person record{
     string name;
     string address;
     string phonenumber;
