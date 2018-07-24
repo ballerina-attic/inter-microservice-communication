@@ -19,19 +19,19 @@ import ballerina/io;
 import ballerina/jms;
 import ballerina/http;
 
-type Trip{
+type Trip record{
     string tripID;
     Driver driver;
     Person person;
     string time;
 };
-type Driver{
+type Driver record{
     string driverID;
     string drivername;
 
 };
 
-type Person {
+type Person record{
     string name;
     string address;
     string phonenumber;
@@ -88,7 +88,7 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         string personDetail = check message.getTextMessageContent();
         log:printInfo("person Details: " + personDetail);
         json person = <json>personDetail;
-        orderToDeliver.setJsonPayload(person);
+        orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
         //TODO fix the way to extract JSON path message from JMS message
         log:printInfo("name dd" + name);
