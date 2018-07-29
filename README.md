@@ -85,9 +85,6 @@ Ballerina is a complete programming language that supports custom project struct
 Let's get started with the implementation of the `trip-management.bal`, which acts as the interface to coordinate interactions between passenger management `passenger-management.bal` and  dispatcher `dispatcher.bal`. The dispatcher be act as an middleman which will coordinate Driver and Passenger. (The overall coordination seems to be very simple). However lets walk through each implementation 
 Refer to the code attached below. Inline comments added for better understanding.
 
-
-![alt text](/images/trip-management.png)
-
 ##### trip-management.bal
 ```ballerina
 import ballerina/log;
@@ -207,7 +204,6 @@ service<http:Service> TripManagement bind listener {
 To see the complete implementation of the above, refer to the [trip-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/trip-management.bal).
 
 ##### dispatcher.bal
-![alt text](/images/dispatcher.png)
 
 ```ballerina
 import ballerina/log;
@@ -331,7 +327,6 @@ To see the complete implementation of the above, refer to the [dispatcher.bal](h
 
 
 ##### passenger-management.bal
-![alt text](/images/passanger-management.png)
 
 ```ballerina
 import ballerina/http;
@@ -431,8 +426,6 @@ To see the complete implementation of the above, refer to the [passenger-managem
 
 
 ##### driver-management.bal
-
-![alt text](/images/driver-management.png)
 
 ```ballerina
 import ballerina/http;
