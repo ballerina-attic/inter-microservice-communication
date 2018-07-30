@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/ballerina-guides/inter-microservice-communicaiton.svg?branch=master)](https://github.com/ballerina-guides/inter-microservice-communicaiton)
 
-# Inter-Process Communication in a Microservices Architecture
+# Inter-process communication for Microservices
 
 In this guide we are focusing on building applications with a microservices architecture. In this article, we are considering a look at how the services within a system communicate with one another.
 
