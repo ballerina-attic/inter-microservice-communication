@@ -63,13 +63,13 @@ service<http:Service> PassengerManagement bind listener {
         // check will cause the service to send back an error 
         // if the payload is not JSON
         json responseMessage;
-        json passangerInfoJSON = check request.getJsonPayload();
+        json passengerInfoJSON = check request.getJsonPayload();
         
-        log:printInfo("JSON :::" + passangerInfoJSON.toString());
+        log:printInfo("JSON :::" + passengerInfoJSON.toString());
         
-        string customerName = passangerInfoJSON.customerName.toString();
-        string address = passangerInfoJSON.address.toString();
-        string contact = passangerInfoJSON.phonenumber.toString();
+        string customerName = passengerInfoJSON.customerName.toString();
+        string address = passengerInfoJSON.address.toString();
+        string contact = passengerInfoJSON.phonenumber.toString();
 
         person.name = customerName;
         person.address=address;
