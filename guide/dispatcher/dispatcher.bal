@@ -19,19 +19,20 @@ import ballerina/io;
 import ballerina/jms;
 import ballerina/http;
 
-type Trip record{
+type Trip record {
     string tripID;
     Driver driver;
     Person person;
     string time;
 };
-type Driver record{
+
+type Driver record {
     string driverID;
     string drivername;
 
 };
 
-type Person record{
+type Person record {
     string name;
     string address;
     string phonenumber;

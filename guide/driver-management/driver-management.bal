@@ -18,7 +18,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person record{
+type RecordName record {
     string name;
     string address;
     string phonenumber;
