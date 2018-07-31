@@ -19,15 +19,12 @@ import ballerina/http;
 import ballerina/jms;
 import ballerinax/docker;
 
-// Type definition for a book order
+// Type definition for a Pickup order
 type Pickup record {
     string customerName;
     string address;
     string phonenumber;
 };
-
-// Global variable containing all the available books
-//json[] bookInventory = ["Tom Jones", "The Rainbow", "Lolita", "Atonement", "Hamlet"];
 
 // Initialize a JMS connection with the provider
 // 'providerUrl' and 'initialContextFactory' vary based on the JMS provider you use
@@ -56,7 +53,7 @@ endpoint http:Client passengerMgtEP {
 
 //@doker:Config {
 //    registry:"ballerina.guides.io",
-//    name:"bookstore_service",
+//    name:"trip_management_service",
  //   tag:"v1.0"
 //}
 
@@ -77,10 +74,10 @@ endpoint http:Listener listener {
 };
 
 
-// Book store service, which allows users to order books online for delivery
+// Trip manager service, which is managing trip requests received from the client 
 @http:ServiceConfig {basePath:"/trip-manager"}
 service<http:Service> TripManagement bind listener {
-    // Resource that allows users to place an order for a book
+    // Resource that allows users to place an order for a pickup
     @http:ResourceConfig { methods: ["POST"], consumes: ["application/json"],
         produces: ["application/json"], path : "/pickup" }
     pickup(endpoint caller, http:Request request) {
@@ -121,7 +118,7 @@ service<http:Service> TripManagement bind listener {
     
         log:printInfo("Calling passenger management service:");
       
-        // call passanger-management and get passagner orginization claims
+        // call passanger-management and get passegner orginization claims
         json responseMessage;
         http:Request passengerManagerReq;
         json pickupjson =  check <json>pickup;
