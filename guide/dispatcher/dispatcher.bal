@@ -90,11 +90,8 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         json person = <json>personDetail;
         orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
-        //TODO fix the way to extract JSON path message from JMS message
-        log:printInfo("name dd" + name);
-        //TODO fix the way to extract JSON path message from JMS message
-        Trip trip;
         
+        Trip trip;
         trip.person.name = "dushan";
         trip.person.address="1817";
         trip.person.phonenumber="0014089881345";
