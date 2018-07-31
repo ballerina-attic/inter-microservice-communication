@@ -114,15 +114,13 @@ jms:Session jmsSession = new(jmsConnection, {
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsTripDispatchOrder {
-    session:jmsSession,
-    queueName:"trip-dispatcher"
+    session:jmsSession, queueName:"trip-dispatcher"
 };
 
 // Client endpoint to communicate with Airline reservation service
 endpoint http:Client passengerMgtEP {
     url:"http://localhost:9091/passenger-management"
 };
-
 
 //@doker:Config {
 //    registry:"ballerina.guides.io",
@@ -131,8 +129,8 @@ endpoint http:Client passengerMgtEP {
 //}
 
 //@docker:CopyFiles {
-//    files:[{source:"/Users/xxxx/workspace/xx/ballerina/bbg/apache-activemq-5.13.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar",
- //           target:"/ballerina/runtime/bre/lib"},{source:"/Users/xx/workspace/xx/ballerina/bbg/apache-activemq-5.13.0/lib/activemq-client-5.13.0.jar",
+//    files:[{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar",
+ //           target:"/ballerina/runtime/bre/lib"},{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/activemq-client-5.13.0.jar",
  //           target:"/ballerina/runtime/bre/lib"}]
 //}
 
@@ -145,7 +143,6 @@ endpoint http:Client passengerMgtEP {
 endpoint http:Listener listener {
     port:9090
 };
-
 
 // Trip manager service, which is managing trip requests received from the client 
 @http:ServiceConfig {basePath:"/trip-manager"}
@@ -202,20 +199,19 @@ service<http:Service> TripManagement bind listener {
         // Dispatch to the dispatcher service
         // Create a JMS message
         jms:Message queueMessage = check jmsSession.createTextMessage(passengerResponseJSON.toString());
-            // Send the message to the JMS queue
+        // Send the message to the JMS queue
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
-        // CREATE TRIP
-        // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
+        // Creating Trip
+        // call Dispatcher and contacting Driver and Passenger
         log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
         _ = caller -> respond(response);
     }
-
 }
 ```
 To see the complete implementation of the above, refer to the [trip-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/trip-management.bal).
@@ -228,23 +224,19 @@ import ballerina/io;
 import ballerina/jms;
 import ballerina/http;
 
-//data model Trip
-type Trip record{
+type Trip record {
     string tripID;
     Driver driver;
     Person person;
     string time;
 };
 
-//data model Driver
-type Driver record{
+type Driver record {
     string driverID;
     string drivername;
-
 };
 
-//data model Person
-type Person record{
+type Person record {
     string name;
     string address;
     string phonenumber;
@@ -272,22 +264,17 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-dispatcher"
+    session:jmsSession, queueName:"trip-dispatcher"
 };
-
-
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsPassengerMgtNotifer {
-    session:jmsSession,
-    queueName:"trip-passenger-notify"
+    session:jmsSession, queueName:"trip-passenger-notify"
 };
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsDriverMgtNotifer {
-    session:jmsSession,
-    queueName:"trip-driver-notify"
+    session:jmsSession, queueName:"trip-driver-notify"
 };
 
 // JMS service that consumes messages from the JMS queue
@@ -303,10 +290,8 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         json person = <json>personDetail;
         orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
-    
-        Trip trip;
         
-        // data mapper logic can be enhaced using multiple backend data services
+        Trip trip;
         trip.person.name = "dushan";
         trip.person.address="1817";
         trip.person.phonenumber="0014089881345";
@@ -330,12 +315,8 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
             worker driverNotification {
                _ = jmsDriverMgtNotifer -> send(queueMessage);
             }
-
-        } join (all) (map collector) {
+        } join (all) (map collector) {}
     }
-
-    }
-    
 }
 ```
 To see the complete implementation of the above, refer to the [dispatcher.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/dispatcher.bal).
@@ -375,10 +356,8 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-passenger-notify"
+    session:jmsSession, queueName:"trip-passenger-notify"
 };
-
 
 @http:ServiceConfig { basePath: "/passenger-management" }
 service<http:Service> PassengerManagement bind listener {
@@ -413,12 +392,11 @@ service<http:Service> PassengerManagement bind listener {
 
         json personjson = check <json>person;
         responseMessage = personjson;
-        log:printInfo("Passenger claims included in the response:" + personjson.toString());
+        log:printInfo("Passanger claims included in the response:" + personjson.toString());
         res.setJsonPayload(untaint personjson);
         _ = caller -> respond (res);
     }
 }
-
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
@@ -429,10 +407,8 @@ service<jms:Consumer> PassengerNotificationService bind jmsConsumer {
         http:Request orderToDeliver;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details:" + personDetail);
-       
-    }
-    
+        log:printInfo("Trip Details:" + personDetail);       
+    }   
 }
 ```
 To see the complete implementation of the above, refer to the [passenger-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master/passenger-management.bal).
@@ -446,7 +422,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person record{
+type Person record {
     string name;
     string address;
     string phonenumber;
@@ -473,12 +449,8 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-driver-notify"
+    session:jmsSession, queueName:"trip-driver-notify"
 };
-
-
-
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
@@ -489,10 +461,8 @@ service<jms:Consumer> DriverNotificationService bind jmsConsumer {
         http:Request orderToDeliver;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details: " + personDetail);
-       
-    }
-    
+        log:printInfo("Trip Details: " + personDetail);     
+    }   
 }
 ```
 To see the complete implementation of the above, refer to the [driver-management.bal](https://github.com/dushansachinda/inter-microservice-communicaiton/tree/master//driver-management.bal).
