@@ -81,7 +81,6 @@ service<http:Service> PassengerManagement bind listener {
         log:printInfo("address:" + address);
         log:printInfo("contact:" + contact);
 
-        //TODO prepare client response
         json personjson = check <json>person;
         responseMessage = personjson;
         log:printInfo("Passanger claims included in the response:" + personjson.toString());
