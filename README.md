@@ -87,6 +87,22 @@ Refer to the code attached below. Inline comments added for better understanding
 
 ##### trip-management.bal
 ```ballerina
+// Copyright (c) 2018 WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import ballerina/log;
 import ballerina/http;
 import ballerina/jms;
@@ -99,6 +115,8 @@ type Pickup record {
     string phonenumber;
 };
 
+// Global variable containing all the available books
+//json[] bookInventory = ["Tom Jones", "The Rainbow", "Lolita", "Atonement", "Hamlet"];
 
 // Initialize a JMS connection with the provider
 // 'providerUrl' and 'initialContextFactory' vary based on the JMS provider you use
@@ -119,11 +137,28 @@ endpoint jms:QueueSender jmsTripDispatchOrder {
     queueName:"trip-dispatcher"
 };
 
-// Client endpoint to communicate with passager management service
+// Client endpoint to communicate with Airline reservation service
 endpoint http:Client passengerMgtEP {
     url:"http://localhost:9091/passenger-management"
 };
 
+
+//@doker:Config {
+//    registry:"ballerina.guides.io",
+//    name:"bookstore_service",
+ //   tag:"v1.0"
+//}
+
+//@docker:CopyFiles {
+//    files:[{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar",
+ //           target:"/ballerina/runtime/bre/lib"},{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/activemq-client-5.13.0.jar",
+ //           target:"/ballerina/runtime/bre/lib"}]
+//}
+
+//@docker:Expose{}
+//endpoint http:Listener listener {
+//    port:9090
+//};
 
 // Service endpoint
 endpoint http:Listener listener {
@@ -131,7 +166,7 @@ endpoint http:Listener listener {
 };
 
 
-// Trip management serice, which will take client pickup request
+// Book store service, which allows users to order books online for delivery
 @http:ServiceConfig {basePath:"/trip-manager"}
 service<http:Service> TripManagement bind listener {
     // Resource that allows users to place an order for a book
@@ -177,22 +212,23 @@ service<http:Service> TripManagement bind listener {
       
         // call passanger-management and get passagner orginization claims
         json responseMessage;
-        http:Request passangermanagerReq;
-        json pickupjson = check <json>pickup;
-        passangermanagerReq.setJsonPayload(untaint pickupjson);
-        http:Response passangerResponse=  check passengerMgtEP -> post("/claims",passangermanagerReq);
-        json passangerResponseJSON = check passangerResponse.getJsonPayload();
+        http:Request passengerManagerReq;
+        json pickupjson =  check <json>pickup;
+        passengerManagerReq.setJsonPayload(untaint pickupjson);
+        http:Response passengerResponse=  check passengerMgtEP -> post("/claims",passengerManagerReq);
+        json passengerResponseJSON = check passengerResponse.getJsonPayload();
 
         // Dispatch to the dispatcher service
         // Create a JMS message
-        jms:Message queueMessage = check jmsSession.createTextMessage(passangerResponseJSON.toString());
+        jms:Message queueMessage = check jmsSession.createTextMessage(passengerResponseJSON.toString());
             // Send the message to the JMS queue
-        
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
-        log:printInfo("passanger-magement response:"+passangerResponseJSON.toString());
+        // CREATE TRIP
+        // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
+        log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
@@ -286,9 +322,7 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         json person = <json>personDetail;
         orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
-        //TODO fix the way to extract JSON path message from JMS message
-        log:printInfo("name dd" + name);
-        //TODO fix the way to extract JSON path message from JMS message
+    
         Trip trip;
         
         // data mapper logic can be enhaced using multiple backend data services
@@ -333,7 +367,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/jms;
 
-type Person record{
+type Person record {
     string name;
     string address;
     string phonenumber;
@@ -378,13 +412,13 @@ service<http:Service> PassengerManagement bind listener {
         // check will cause the service to send back an error 
         // if the payload is not JSON
         json responseMessage;
-        json passangerInfoJSON = check request.getJsonPayload();
+        json passengerInfoJSON = check request.getJsonPayload();
         
-        log:printInfo("JSON :::" + passangerInfoJSON.toString());
+        log:printInfo("JSON :::" + passengerInfoJSON.toString());
         
-        string customerName = passangerInfoJSON.customerName.toString();
-        string address = passangerInfoJSON.address.toString();
-        string contact = passangerInfoJSON.phonenumber.toString();
+        string customerName = passengerInfoJSON.customerName.toString();
+        string address = passengerInfoJSON.address.toString();
+        string contact = passengerInfoJSON.phonenumber.toString();
 
         person.name = customerName;
         person.address=address;
@@ -396,7 +430,6 @@ service<http:Service> PassengerManagement bind listener {
         log:printInfo("address:" + address);
         log:printInfo("contact:" + contact);
 
-        //TODO prepare client response
         json personjson = check <json>person;
         responseMessage = personjson;
         log:printInfo("Passanger claims included in the response:" + personjson.toString());
