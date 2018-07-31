@@ -45,12 +45,8 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-driver-notify"
+    session:jmsSession, queueName:"trip-driver-notify"
 };
-
-
-
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
@@ -59,13 +55,10 @@ service<jms:Consumer> DriverNotificationService bind jmsConsumer {
     onMessage(endpoint consumer, jms:Message message) {
         log:printInfo("Trip information received for Driver notification service notifying coordinating with Driver the trip info");
         http:Request orderToDeliver;
-        //orderToDeliver.
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details: " + personDetail);
-       
-    }
-    
+        log:printInfo("Trip Details: " + personDetail);     
+    }   
 }
 
 

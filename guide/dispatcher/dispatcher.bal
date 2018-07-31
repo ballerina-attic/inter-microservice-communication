@@ -29,7 +29,6 @@ type Trip record {
 type Driver record {
     string driverID;
     string drivername;
-
 };
 
 type Person record {
@@ -60,22 +59,17 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-dispatcher"
+    session:jmsSession, queueName:"trip-dispatcher"
 };
-
-
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsPassengerMgtNotifer {
-    session:jmsSession,
-    queueName:"trip-passenger-notify"
+    session:jmsSession, queueName:"trip-passenger-notify"
 };
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsDriverMgtNotifer {
-    session:jmsSession,
-    queueName:"trip-driver-notify"
+    session:jmsSession, queueName:"trip-driver-notify"
 };
 
 // JMS service that consumes messages from the JMS queue
@@ -116,11 +110,7 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
             worker driverNotification {
                _ = jmsDriverMgtNotifer -> send(queueMessage);
             }
-
-        } join (all) (map collector) {
+        } join (all) (map collector) {}
     }
-
-    }
-    
 }
 

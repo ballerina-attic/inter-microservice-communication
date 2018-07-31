@@ -45,10 +45,8 @@ jms:Session jmsSession = new(conn, {
 
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession,
-    queueName:"trip-passenger-notify"
+    session:jmsSession, queueName:"trip-passenger-notify"
 };
-
 
 @http:ServiceConfig { basePath: "/passenger-management" }
 service<http:Service> PassengerManagement bind listener {
@@ -99,10 +97,8 @@ service<jms:Consumer> PassengerNotificationService bind jmsConsumer {
         http:Request orderToDeliver;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details:" + personDetail);
-       
-    }
-    
+        log:printInfo("Trip Details:" + personDetail);       
+    }   
 }
 
 

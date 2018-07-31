@@ -41,8 +41,7 @@ jms:Session jmsSession = new(jmsConnection, {
 
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsTripDispatchOrder {
-    session:jmsSession,
-    queueName:"trip-dispatcher"
+    session:jmsSession, queueName:"trip-dispatcher"
 };
 
 // Client endpoint to communicate with Airline reservation service
@@ -72,7 +71,6 @@ endpoint http:Client passengerMgtEP {
 endpoint http:Listener listener {
     port:9090
 };
-
 
 // Trip manager service, which is managing trip requests received from the client 
 @http:ServiceConfig {basePath:"/trip-manager"}
@@ -129,18 +127,17 @@ service<http:Service> TripManagement bind listener {
         // Dispatch to the dispatcher service
         // Create a JMS message
         jms:Message queueMessage = check jmsSession.createTextMessage(passengerResponseJSON.toString());
-            // Send the message to the JMS queue
+        // Send the message to the JMS queue
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
-        // CREATE TRIP
-        // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
+        // Creating Trip
+        // call Dispatcher and contacting Driver and Passenger
         log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
         _ = caller -> respond(response);
     }
-
 }
