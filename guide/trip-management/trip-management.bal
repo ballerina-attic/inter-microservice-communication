@@ -123,24 +123,23 @@ service<http:Service> TripManagement bind listener {
       
         // call passanger-management and get passagner orginization claims
         json responseMessage;
-        http:Request passangermanagerReq;
+        http:Request passengerManagerReq;
         json pickupjson =  check <json>pickup;
-        passangermanagerReq.setJsonPayload(untaint pickupjson);
-        http:Response passangerResponse=  check passengerMgtEP -> post("/claims",passangermanagerReq);
-        json passangerResponseJSON = check passangerResponse.getJsonPayload();
+        passengerManagerReq.setJsonPayload(untaint pickupjson);
+        http:Response passengerResponse=  check passengerMgtEP -> post("/claims",passengerManagerReq);
+        json passengerResponseJSON = check passengerResponse.getJsonPayload();
 
         // Dispatch to the dispatcher service
         // Create a JMS message
-        jms:Message queueMessage = check jmsSession.createTextMessage(passangerResponseJSON.toString());
+        jms:Message queueMessage = check jmsSession.createTextMessage(passengerResponseJSON.toString());
             // Send the message to the JMS queue
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
-        //TODO get passager claims
         // CREATE TRIP
         // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
-        log:printInfo("passanger-magement response:"+passangerResponseJSON.toString());
+        log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
