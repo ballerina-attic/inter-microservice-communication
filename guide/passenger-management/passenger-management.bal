@@ -46,7 +46,7 @@ jms:Session jmsSession = new(conn, {
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
     session:jmsSession,
-    queueName:"trip-passanger-notify"
+    queueName:"trip-passenger-notify"
 };
 
 

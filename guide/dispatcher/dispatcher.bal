@@ -69,7 +69,7 @@ endpoint jms:QueueReceiver jmsConsumer {
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsPassengerMgtNotifer {
     session:jmsSession,
-    queueName:"trip-passanger-notify"
+    queueName:"trip-passenger-notify"
 };
 
 // Initialize a queue sender using the created session
