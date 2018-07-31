@@ -92,15 +92,12 @@ import ballerina/http;
 import ballerina/jms;
 import ballerinax/docker;
 
-// Type definition for a book order
+// Type definition for a Pickup order
 type Pickup record {
     string customerName;
     string address;
     string phonenumber;
 };
-
-// Global variable containing all the available books
-//json[] bookInventory = ["Tom Jones", "The Rainbow", "Lolita", "Atonement", "Hamlet"];
 
 // Initialize a JMS connection with the provider
 // 'providerUrl' and 'initialContextFactory' vary based on the JMS provider you use
@@ -129,13 +126,13 @@ endpoint http:Client passengerMgtEP {
 
 //@doker:Config {
 //    registry:"ballerina.guides.io",
-//    name:"bookstore_service",
+//    name:"trip_management_service",
  //   tag:"v1.0"
 //}
 
 //@docker:CopyFiles {
-//    files:[{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar",
- //           target:"/ballerina/runtime/bre/lib"},{source:"/Users/dushan/workspace/wso2/ballerina/bbg/apache-activemq-5.13.0/lib/activemq-client-5.13.0.jar",
+//    files:[{source:"/Users/xxxx/workspace/xx/ballerina/bbg/apache-activemq-5.13.0/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar",
+ //           target:"/ballerina/runtime/bre/lib"},{source:"/Users/xx/workspace/xx/ballerina/bbg/apache-activemq-5.13.0/lib/activemq-client-5.13.0.jar",
  //           target:"/ballerina/runtime/bre/lib"}]
 //}
 
@@ -150,10 +147,10 @@ endpoint http:Listener listener {
 };
 
 
-// Book store service, which allows users to order books online for delivery
+// Trip manager service, which is managing trip requests received from the client 
 @http:ServiceConfig {basePath:"/trip-manager"}
 service<http:Service> TripManagement bind listener {
-    // Resource that allows users to place an order for a book
+    // Resource that allows users to place an order for a pickup
     @http:ResourceConfig { methods: ["POST"], consumes: ["application/json"],
         produces: ["application/json"], path : "/pickup" }
     pickup(endpoint caller, http:Request request) {
@@ -194,7 +191,7 @@ service<http:Service> TripManagement bind listener {
     
         log:printInfo("Calling passenger management service:");
       
-        // call passenger-management and get passegner orginization claims
+        // call passanger-management and get passegner orginization claims
         json responseMessage;
         http:Request passengerManagerReq;
         json pickupjson =  check <json>pickup;
@@ -211,8 +208,8 @@ service<http:Service> TripManagement bind listener {
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
         // CREATE TRIP
-        // CALL DISPATCHER FOR CONTACT DRIVER and PASSENGER
-        log:printInfo("passenger-magement response:"+passengerResponseJSON.toString());
+        // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
+        log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
@@ -705,7 +702,7 @@ endpoint http:Listener listener {
     port:9090
 };
 
-// Type definition for a book order
+// Type definition for a pickup order
 type pickup {
     string customerName;
     string address;
