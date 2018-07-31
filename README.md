@@ -194,7 +194,7 @@ service<http:Service> TripManagement bind listener {
     
         log:printInfo("Calling passenger management service:");
       
-        // call passanger-management and get passagner orginization claims
+        // call passenger-management and get passegner orginization claims
         json responseMessage;
         http:Request passengerManagerReq;
         json pickupjson =  check <json>pickup;
@@ -211,8 +211,8 @@ service<http:Service> TripManagement bind listener {
         _ = jmsTripDispatchOrder -> send(queueMessage);
 
         // CREATE TRIP
-        // CALL DISPATCHER FOR CONTACT DRIVER and PASSANGER
-        log:printInfo("passanger-magement response:"+passengerResponseJSON.toString());
+        // CALL DISPATCHER FOR CONTACT DRIVER and PASSENGER
+        log:printInfo("passenger-magement response:"+passengerResponseJSON.toString());
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
@@ -284,7 +284,7 @@ endpoint jms:QueueReceiver jmsConsumer {
 // Initialize a queue sender using the created session
 endpoint jms:QueueSender jmsPassengerMgtNotifer {
     session:jmsSession,
-    queueName:"trip-passanger-notify"
+    queueName:"trip-passenger-notify"
 };
 
 // Initialize a queue sender using the created session
@@ -379,7 +379,7 @@ jms:Session jmsSession = new(conn, {
 // Initialize a queue receiver using the created session
 endpoint jms:QueueReceiver jmsConsumer {
     session:jmsSession,
-    queueName:"trip-passanger-notify"
+    queueName:"trip-passenger-notify"
 };
 
 
@@ -416,7 +416,7 @@ service<http:Service> PassengerManagement bind listener {
 
         json personjson = check <json>person;
         responseMessage = personjson;
-        log:printInfo("Passanger claims included in the response:" + personjson.toString());
+        log:printInfo("Passenger claims included in the response:" + personjson.toString());
         res.setJsonPayload(untaint personjson);
         _ = caller -> respond (res);
     }
@@ -606,7 +606,7 @@ Driver management service would receive trip notification, the notification serv
 2018-06-08 22:08:38,361 INFO  [driver-management] - Trip Details: {"tripID":"0001","driver":{"driverID":"driver001","drivername":"Adeel Sign"},"person":{"name":"dushan","address":"1817","phonenumber":"0014089881345","registerID":"AB0001222","email":"dushan@wso2.com"},"time":"2018 Jan 6 10:10:20"}
 ```
 
-Similarly passanger would get his trip notification
+Similarly passenger would get his trip notification
 ```
 2018-06-08 22:08:38,346 INFO  [passenger-management] - Trip Details:{"tripID":"0001","driver":{"driverID":"driver001","drivername":"Adeel Sign"},"person":{"name":"dushan","address":"1817","phonenumber":"0014089881345","registerID":"AB0001222","email":"dushan@wso2.com"},"time":"2018 Jan 6 10:10:20"}
 ```
@@ -729,7 +729,7 @@ jms:Session jmsSession = new(jmsConnection, {
 ...
 
 ```
-- You may configure other services the same way as above i.e `dispatcher.bal`, `passanger-management.bal`, `driver-management.bal` what you may need to change `@docker:Config` names to the respective services
+- You may configure other services the same way as above i.e `dispatcher.bal`, `passenger-management.bal`, `driver-management.bal` what you may need to change `@docker:Config` names to the respective services
 
 
 - `@docker:Config` annotation is used to provide the basic docker image configurations for the sample. `@docker:CopyFiles` is used to copy the JMS broker jar files into the ballerina bre/lib folder. You can provide multiple files as an array to field `files` of CopyFiles docker annotation. `@docker:Expose {}` is used to expose the port. 
@@ -751,10 +751,10 @@ jms:Session jmsSession = new(jmsConnection, {
 ```
 
 ```
-   $ballerina build passanger-management
+   $ballerina build passenger-management
   
    Run following command to start docker container: 
-   docker run -d -p 9092:9090 ballerina.guides.io/passanger-management:v1.0
+   docker run -d -p 9092:9090 ballerina.guides.io/passenger-management:v1.0
 ```
 
 ```
@@ -766,7 +766,7 @@ jms:Session jmsSession = new(jmsConnection, {
 
 
    Here we run the docker image with flag`` -p <host_port>:<container_port>`` so that we use the host port 9090 and the container port 9090. Therefore you can access the service through the host port. Please note when exposing the services we are using port offset to avoid port conflicts thus we use 9090, 9091,9092,9093 ports respectively. 
-- Since services are inter communicating each other, e.g trip-manager <=> passanger-management which is happening through HTTP communication, thus, please you appropriate ports and configure the service layer
+- Since services are inter communicating each other, e.g trip-manager <=> passenger-management which is happening through HTTP communication, thus, please you appropriate ports and configure the service layer
 
 - Verify docker container is running with the use of `` $ docker ps``. The status of the docker container should be shown as 'Up'. 
 
