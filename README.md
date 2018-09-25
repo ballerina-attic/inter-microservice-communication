@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ballerina-guides/inter-microservice-communicaiton.svg?branch=master)](https://travis-ci.org/ballerina-guides/inter-microservice-communicaiton)
+[![Build Status](https://travis-ci.org/ballerina-guides/inter-microservice-communication.svg?branch=master)](https://travis-ci.org/ballerina-guides/inter-microservice-communication)
 
 # Inter-process communication for Microservices
 
