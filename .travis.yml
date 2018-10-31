@@ -13,38 +13,38 @@
 # limitations under the License.
 
 script:
-- BALLERINA_VERSION="${VERSION:-0.980.2-SNAPSHOT}"
+- BALLERINA_VERSION=${VERSION:-0.982.1-SNAPSHOT}
 - echo -e "\033[36m${BALLERINA_VERSION}\033[m"
 
-- DISTRIBUTION_NAME=ballerina-platform-$BALLERINA_VERSION
+- DISTRIBUTION_NAME=ballerina-platform-${BALLERINA_VERSION}
 - echo -e "\033[36m${DISTRIBUTION_NAME}\033[m"
 
-- DOWNLOAD_CHANNEL="${CHANNEL:-nightly}"
+- DOWNLOAD_CHANNEL=${CHANNEL:-nightly}
 - echo -e "\033[36m${DOWNLOAD_CHANNEL}\033[m"
 
-- DOWNLOAD_LOCATION="${URL:-https://product-dist.ballerina.io}"
+- DOWNLOAD_LOCATION=${URL:-https://product-dist.ballerina.io}
 - echo -e "\033[36m${DOWNLOAD_LOCATION}\033[m"
 
-- echo -e "\033[36m$DOWNLOAD_LOCATION/$DOWNLOAD_CHANNEL/$BALLERINA_VERSION/$DISTRIBUTION_NAME.zip\033[m"
-- wget $DOWNLOAD_LOCATION/$DOWNLOAD_CHANNEL/$BALLERINA_VERSION/$DISTRIBUTION_NAME.zip
+- echo -e "\033[36m${DOWNLOAD_LOCATION}/${DOWNLOAD_CHANNEL}/${BALLERINA_VERSION}/${DISTRIBUTION_NAME}.zip\033[m"
+- wget ${DOWNLOAD_LOCATION}/${DOWNLOAD_CHANNEL}/${BALLERINA_VERSION}/${DISTRIBUTION_NAME}.zip
 
-- unzip -q $DISTRIBUTION_NAME.zip
+- unzip -q ${DISTRIBUTION_NAME}.zip
 
-- export PATH=$PATH:$(pwd)/$DISTRIBUTION_NAME/bin
+- export PATH=${PATH}:$(pwd)/${DISTRIBUTION_NAME}/bin
 
 - ballerina version
 
-- ACTIVEMQ_VERSION="apache-activemq-5.15.4"
+- ACTIVEMQ_VERSION=apache-activemq-5.15.4
 
-- wget https://archive.apache.org/dist/activemq/5.15.4/$ACTIVEMQ_VERSION-bin.tar.gz
+- wget https://archive.apache.org/dist/activemq/5.15.4/${ACTIVEMQ_VERSION}-bin.tar.gz
 
-- tar xzf $ACTIVEMQ_VERSION-bin.tar.gz
+- tar xzf ${ACTIVEMQ_VERSION}-bin.tar.gz
 
-- ./$ACTIVEMQ_VERSION/bin/activemq start
+- ./${ACTIVEMQ_VERSION}/bin/activemq start
 
-- cp $ACTIVEMQ_VERSION/lib/activemq-client-5.15.4.jar $DISTRIBUTION_NAME/bre/lib
-- cp $ACTIVEMQ_VERSION/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar $DISTRIBUTION_NAME/bre/lib
-- cp $ACTIVEMQ_VERSION/lib/hawtbuf-1.11.jar $DISTRIBUTION_NAME/bre/lib
+- cp ${ACTIVEMQ_VERSION}/lib/activemq-client-5.15.4.jar ${DISTRIBUTION_NAME}/bre/lib
+- cp ${ACTIVEMQ_VERSION}/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar ${DISTRIBUTION_NAME}/bre/lib
+- cp ${ACTIVEMQ_VERSION}/lib/hawtbuf-1.11.jar ${DISTRIBUTION_NAME}/bre/lib
 
 - cd guide
 
