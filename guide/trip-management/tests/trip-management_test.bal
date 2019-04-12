@@ -27,16 +27,13 @@ function beforeFunc() {
 }
 
 // Client endpoint
-endpoint http:Client clientEP {
-    url: "http://localhost:9090/trip-manager"
-};
-
+http:Client clientEP = new("http://localhost:9090/trip-manager");
 
 // Function to test 'pickup' resource
 @test:Config
-function testResourcePickup() {
+function testResourcePickup() returns error? {
     // Initialize the empty http request
-    http:Request req;
+    http:Request req = new;
     // Construct a request payload
     json payload = {"Name":"Dushan", "pickupaddr":"1817, Anchor Way, San Jose, US",
    "ContactNumber":"0014089881345"};

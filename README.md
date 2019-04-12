@@ -16,7 +16,7 @@ The following are the sections available in this guide.
 - [Observability](#observability)
 
 ## What you’ll build
-The old fasion monolithic application process, components interactions are designed in a way that invoke one another via language‑level method or function calls. On the other hand, a microservices‑based application fully focused on distributed system running on multiple singular containers. Each service instance is typically a process. Consequently, as the following diagram shows, services must interact using an inter‑process communication mechanism.
+The old fashion monolithic application process, components interactions are designed in a way that invoke one another via language‑level method or function calls. On the other hand, a microservices‑based application fully focused on distributed system running on multiple singular containers. Each service instance is typically a process. Consequently, as the following diagram shows, services must interact using an inter‑process communication mechanism.
 
 When selecting an Inter process communication mechanism for a service, it is always useful to think first about how services interact. There are a variety of client⇔service interaction styles. They can be categorized along two dimensions. The first dimension is whether the interaction is one‑to‑one or one‑to‑many:
 
@@ -113,14 +113,11 @@ jms:Session jmsSession = new(jmsConnection, {
     });
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsTripDispatchOrder {
-    session:jmsSession, queueName:"trip-dispatcher"
-};
+jms:QueueSender jmsTripDispatchOrder = new(jmsSession, queueName = "trip-dispatcher");
 
 // Client endpoint to communicate with Airline reservation service
-endpoint http:Client passengerMgtEP {
-    url:"http://localhost:9091/passenger-management"
-};
+http:Client passengerMgtEP = new("http://localhost:9091/passenger-management");
+
 
 //@doker:Config {
 //    registry:"ballerina.guides.io",
@@ -135,37 +132,36 @@ endpoint http:Client passengerMgtEP {
 //}
 
 //@docker:Expose{}
-//endpoint http:Listener listener {
-//    port:9090
-//};
+//listener http:Listener httpListener = new(9090);
 
 // Service endpoint
-endpoint http:Listener listener {
-    port:9090
-};
+listener http:Listener httpListener = new(9090);
 
 // Trip manager service, which is managing trip requests received from the client 
-@http:ServiceConfig {basePath:"/trip-manager"}
-service<http:Service> TripManagement bind listener {
+@http:ServiceConfig {
+    basePath:"/trip-manager"
+}
+service TripManagement on httpListener {
     // Resource that allows users to place an order for a pickup
-    @http:ResourceConfig { methods: ["POST"], consumes: ["application/json"],
-        produces: ["application/json"], path : "/pickup" }
-    pickup(endpoint caller, http:Request request) {
-        http:Response response;
-        Pickup pickup;
+    @http:ResourceConfig {
+        path : "/pickup",
+        methods: ["POST"],
+        consumes: ["application/json"],
+        produces: ["application/json"]
+    }
+    resource function pickup(http:Caller caller, http:Request request) returns error? {
+        http:Response response = new;
         json reqPayload;
 
         // Try parsing the JSON payload from the request
-        match request.getJsonPayload() {
-            // Valid JSON payload
-            json payload => reqPayload = payload;
-            // NOT a valid JSON payload
-            any => {
-                response.statusCode = 400;
-                response.setJsonPayload({"Message":"Invalid payload - Not a valid JSON payload"});
-                _ = caller -> respond(response);
-                done;
-            }
+        var payload = request.getJsonPayload();
+        if (payload is json) {
+            reqPayload = payload;
+        } else {
+            response.statusCode = 400;
+            response.setJsonPayload({"Message":"Invalid payload - Not a valid JSON payload"});
+            checkpanic caller->respond(response);
+            return;
         }
 
         json name = reqPayload.Name;
@@ -177,23 +173,25 @@ service<http:Service> TripManagement bind listener {
         if (name == null || address == null || contact == null) {
             response.statusCode = 400;
             response.setJsonPayload({"Message":"Bad Request - Invalid Trip Request payload"});
-            _ = caller -> respond(response);
-            done;
+            checkpanic caller->respond(response);
+            return;
         }
 
         // Order details
-        pickup.customerName = name.toString();
-        pickup.address = address.toString();
-        pickup.phonenumber = contact.toString();
-    
+        Pickup pickup = {
+            customerName: name.toString(),
+            address: address.toString(),
+            phonenumber: contact.toString()
+        };
+
         log:printInfo("Calling passenger management service:");
       
         // call passanger-management and get passegner orginization claims
         json responseMessage;
-        http:Request passengerManagerReq;
-        json pickupjson =  check <json>pickup;
+        http:Request passengerManagerReq = new;
+        json pickupjson = check json.convert(pickup);
         passengerManagerReq.setJsonPayload(untaint pickupjson);
-        http:Response passengerResponse=  check passengerMgtEP -> post("/claims",passengerManagerReq);
+        http:Response passengerResponse=  check passengerMgtEP->post("/claims", passengerManagerReq);
         json passengerResponseJSON = check passengerResponse.getJsonPayload();
 
         // Dispatch to the dispatcher service
@@ -202,7 +200,7 @@ service<http:Service> TripManagement bind listener {
         // Send the message to the JMS queue
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
-        _ = jmsTripDispatchOrder -> send(queueMessage);
+        checkpanic jmsTripDispatchOrder->send(queueMessage);
 
         // Creating Trip
         // call Dispatcher and contacting Driver and Passenger
@@ -210,7 +208,8 @@ service<http:Service> TripManagement bind listener {
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
-        _ = caller -> respond(response);
+        checkpanic caller->respond(response);
+        return;
     }
 }
 ```
@@ -252,9 +251,7 @@ jms:Connection conn = new({
     });
 
 // Client endpoint to communicate with Airline reservation service
-endpoint http:Client courierEP {
-    url:"http://localhost:9095/courier"
-};
+http:Client courierEP = new("http://localhost:9095/courier");
 
 // Initialize a JMS session on top of the created connection
 jms:Session jmsSession = new(conn, {
@@ -263,27 +260,21 @@ jms:Session jmsSession = new(conn, {
     });
 
 // Initialize a queue receiver using the created session
-endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession, queueName:"trip-dispatcher"
-};
+listener jms:QueueReceiver jmsConsumer = new (jmsSession, queueName = "trip-dispatcher");
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsPassengerMgtNotifer {
-    session:jmsSession, queueName:"trip-passenger-notify"
-};
+jms:QueueSender jmsPassengerMgtNotifer = new(jmsSession, queueName = "trip-passenger-notify");
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsDriverMgtNotifer {
-    session:jmsSession, queueName:"trip-driver-notify"
-};
+jms:QueueSender jmsDriverMgtNotifer = new(jmsSession, queueName = "trip-driver-notify");
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
-service<jms:Consumer> TripDispatcher bind jmsConsumer {
+service TripDispatcher on jmsConsumer {
     // Triggered whenever an order is added to the 'OrderQueue'
-    onMessage(endpoint consumer, jms:Message message) {
+    resource function onMessage(jms:QueueReceiverCaller consumer, jms:Message message) returns error?{
         log:printInfo("New Trip request ready to process from JMS Queue");
-        http:Request orderToDeliver;
+        http:Request orderToDeliver = new;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
         log:printInfo("person Details: " + personDetail);
@@ -291,18 +282,23 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
         
-        Trip trip;
-        trip.person.name = "dushan";
-        trip.person.address="1817";
-        trip.person.phonenumber="0014089881345";
-        trip. person.email="dushan@wso2.com";
-        trip.person.registerID="AB0001222";
-        trip.driver.driverID="driver001";
-        trip.driver.drivername="Adeel Sign";
-        trip.tripID="0001";
-        trip.time="2018 Jan 6 10:10:20";
+        Trip trip = {
+            person: {
+                name: "dushan",
+                address: "1817",
+                phonenumber: "0014089881345",
+                email: "dushan@wso2.com",
+                registerID: "AB0001222"
+            },
+            driver: {
+                driverID: "driver001",
+                drivername: "Adeel Sign"
+            },
+            tripID: "0001",
+            time: "2018 Jan 6 10:10:20"
+        };
 
-        json tripjson = check <json>trip;
+        json tripjson = check json.convert(trip);
 
         log:printInfo("Driver Contacted Trip notification dispatching " + tripjson.toString());
 
@@ -310,12 +306,14 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
          
         fork {
             worker passengerNotification {
-                _ = jmsPassengerMgtNotifer -> send(queueMessage);
+                checkpanic jmsPassengerMgtNotifer->send(queueMessage);
             }
             worker driverNotification {
-               _ = jmsDriverMgtNotifer -> send(queueMessage);
+                checkpanic jmsDriverMgtNotifer->send(queueMessage);
             }
-        } join (all) (map collector) {}
+        }
+        _ = wait {passengerNotification, driverNotification};
+        return;
     }
 }
 ```
@@ -337,9 +335,7 @@ type Person record {
     string email;
 };
 
-endpoint http:Listener listener {
-    port:9091
-};
+listener http:Listener httpListener = new(9091);
 
 // Initialize a JMS connection with the provider
 // 'Apache ActiveMQ' has been used as the message broker
@@ -355,19 +351,18 @@ jms:Session jmsSession = new(conn, {
     });
 
 // Initialize a queue receiver using the created session
-endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession, queueName:"trip-passenger-notify"
-};
+listener jms:QueueReceiver jmsConsumer = new(jmsSession, queueName = "trip-passenger-notify");
 
-@http:ServiceConfig { basePath: "/passenger-management" }
-service<http:Service> PassengerManagement bind listener {
+@http:ServiceConfig {
+    basePath: "/passenger-management"
+}
+service PassengerManagement on httpListener {
     @http:ResourceConfig {
         path : "/claims",
         methods : ["POST"]
     }
-    claims (endpoint caller, http:Request request) {
-        Person person;
-        // create an empty response object 
+    resource function claims(http:Caller caller, http:Request request) returns error? {
+        // create an empty response object
         http:Response res = new;
         // check will cause the service to send back an error 
         // if the payload is not JSON
@@ -380,34 +375,39 @@ service<http:Service> PassengerManagement bind listener {
         string address = passengerInfoJSON.address.toString();
         string contact = passengerInfoJSON.phonenumber.toString();
 
-        person.name = customerName;
-        person.address=address;
-        person.phonenumber=contact;
-        person.email="dushan@wso2.com";
-        person.registerID="AB0001222";
-        
+        Person person = {
+            name: customerName,
+            address: address,
+            phonenumber: contact,
+            email: "dushan@wso2.com",
+            registerID: "AB0001222"
+        };
+
         log:printInfo("customerName:" + customerName);
         log:printInfo("address:" + address);
         log:printInfo("contact:" + contact);
 
-        json personjson = check <json>person;
+        json personjson = check json.convert(person);
         responseMessage = personjson;
         log:printInfo("Passanger claims included in the response:" + personjson.toString());
         res.setJsonPayload(untaint personjson);
-        _ = caller -> respond (res);
+        checkpanic caller->respond(res);
+        return;
     }
 }
 
+
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
-service<jms:Consumer> PassengerNotificationService bind jmsConsumer {
+service PassengerNotificationService on jmsConsumer {
     // Triggered whenever an order is added to the 'OrderQueue'
-    onMessage(endpoint consumer, jms:Message message) {
+    resource function onMessage(jms:QueueReceiverCaller consumer, jms:Message message) returns error? {
         log:printInfo("Trip information received passenger notification service notifying to the client");
-        http:Request orderToDeliver;
+        http:Request orderToDeliver = new;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details:" + personDetail);       
+        log:printInfo("Trip Details:" + personDetail);
+        return;
     }   
 }
 ```
@@ -430,9 +430,7 @@ type Person record {
     string email;
 };
 
-endpoint http:Listener listener {
-    port:9091
-};
+listener http:Listener httpListener = new(9091);
 
 // Initialize a JMS connection with the provider
 // 'Apache ActiveMQ' has been used as the message broker
@@ -448,20 +446,19 @@ jms:Session jmsSession = new(conn, {
     });
 
 // Initialize a queue receiver using the created session
-endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession, queueName:"trip-driver-notify"
-};
+listener jms:QueueReceiver jmsConsumer = new(jmsSession, queueName = "trip-driver-notify");
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
-service<jms:Consumer> DriverNotificationService bind jmsConsumer {
+service DriverNotificationService on jmsConsumer {
     // Triggered whenever an order is added to the 'OrderQueue'
-    onMessage(endpoint consumer, jms:Message message) {
+    resource function onMessage(jms:QueueReceiverCaller consumer, jms:Message message) returns error? {
         log:printInfo("Trip information received for Driver notification service notifying coordinating with Driver the trip info");
-        http:Request orderToDeliver;
+        http:Request orderToDeliver = new;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details: " + personDetail);     
+        log:printInfo("Trip Details: " + personDetail);
+        return;
     }   
 }
 ```
@@ -503,22 +500,20 @@ endpoint http:Client passengerMgtEP {
     timeoutMillis: 2000
 };
         
- ```
- 
+```
 
 or introducing failover to connect multiple passenger-management endpoints to cope with unexpected failures
 
 ```ballerina
-endpoint http:LoadBalanceClient passengerMgtEP {
+http:LoadBalanceClient passengerMgtEP = new({
     targets: [
     // Create an array of HTTP Clients that needs to be Load balanced across
         { url: "http://localhost:9011/passenger-management" },
         { url: "http://localhost:9012/passenger-management" },
         { url: "http://localhost:9013/passenger-management" }
     ]
-};
-
- ```
+});
+```
 
 ## Testing 
 
@@ -668,9 +663,8 @@ import ballerinax/docker;
 }
 
 @docker:Expose{}
-endpoint http:Listener listener {
-    port:9090
-};
+listener http:Listener httpListener = new(9090);
+
 
 // Type definition for a pickup order
 type pickup {

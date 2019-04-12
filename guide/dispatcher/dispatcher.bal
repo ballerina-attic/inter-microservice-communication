@@ -47,9 +47,7 @@ jms:Connection conn = new({
     });
 
 // Client endpoint to communicate with Airline reservation service
-endpoint http:Client courierEP {
-    url:"http://localhost:9095/courier"
-};
+http:Client courierEP = new("http://localhost:9095/courier");
 
 // Initialize a JMS session on top of the created connection
 jms:Session jmsSession = new(conn, {
@@ -58,27 +56,21 @@ jms:Session jmsSession = new(conn, {
     });
 
 // Initialize a queue receiver using the created session
-endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession, queueName:"trip-dispatcher"
-};
+listener jms:QueueReceiver jmsConsumer = new (jmsSession, queueName = "trip-dispatcher");
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsPassengerMgtNotifer {
-    session:jmsSession, queueName:"trip-passenger-notify"
-};
+jms:QueueSender jmsPassengerMgtNotifer = new(jmsSession, queueName = "trip-passenger-notify");
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsDriverMgtNotifer {
-    session:jmsSession, queueName:"trip-driver-notify"
-};
+jms:QueueSender jmsDriverMgtNotifer = new(jmsSession, queueName = "trip-driver-notify");
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
-service<jms:Consumer> TripDispatcher bind jmsConsumer {
+service TripDispatcher on jmsConsumer {
     // Triggered whenever an order is added to the 'OrderQueue'
-    onMessage(endpoint consumer, jms:Message message) {
+    resource function onMessage(jms:QueueReceiverCaller consumer, jms:Message message) returns error?{
         log:printInfo("New Trip request ready to process from JMS Queue");
-        http:Request orderToDeliver;
+        http:Request orderToDeliver = new;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
         log:printInfo("person Details: " + personDetail);
@@ -86,18 +78,23 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
         orderToDeliver.setJsonPayload(untaint person);
         string name = person.name.toString();
         
-        Trip trip;
-        trip.person.name = "dushan";
-        trip.person.address="1817";
-        trip.person.phonenumber="0014089881345";
-        trip. person.email="dushan@wso2.com";
-        trip.person.registerID="AB0001222";
-        trip.driver.driverID="driver001";
-        trip.driver.drivername="Adeel Sign";
-        trip.tripID="0001";
-        trip.time="2018 Jan 6 10:10:20";
+        Trip trip = {
+            person: {
+                name: "dushan",
+                address: "1817",
+                phonenumber: "0014089881345",
+                email: "dushan@wso2.com",
+                registerID: "AB0001222"
+            },
+            driver: {
+                driverID: "driver001",
+                drivername: "Adeel Sign"
+            },
+            tripID: "0001",
+            time: "2018 Jan 6 10:10:20"
+        };
 
-        json tripjson = check <json>trip;
+        json tripjson = check json.convert(trip);
 
         log:printInfo("Driver Contacted Trip notification dispatching " + tripjson.toString());
 
@@ -105,12 +102,13 @@ service<jms:Consumer> TripDispatcher bind jmsConsumer {
          
         fork {
             worker passengerNotification {
-                _ = jmsPassengerMgtNotifer -> send(queueMessage);
+                checkpanic jmsPassengerMgtNotifer->send(queueMessage);
             }
             worker driverNotification {
-               _ = jmsDriverMgtNotifer -> send(queueMessage);
+                checkpanic jmsDriverMgtNotifer->send(queueMessage);
             }
-        } join (all) (map collector) {}
+        }
+        _ = wait {passengerNotification, driverNotification};
+        return;
     }
 }
-

@@ -26,9 +26,7 @@ type Person record {
     string email;
 };
 
-endpoint http:Listener listener {
-    port:9091
-};
+listener http:Listener httpListener = new(9091);
 
 // Initialize a JMS connection with the provider
 // 'Apache ActiveMQ' has been used as the message broker
@@ -44,23 +42,18 @@ jms:Session jmsSession = new(conn, {
     });
 
 // Initialize a queue receiver using the created session
-endpoint jms:QueueReceiver jmsConsumer {
-    session:jmsSession, queueName:"trip-driver-notify"
-};
+listener jms:QueueReceiver jmsConsumer = new(jmsSession, queueName = "trip-driver-notify");
 
 // JMS service that consumes messages from the JMS queue
 // Bind the created consumer to the listener service
-service<jms:Consumer> DriverNotificationService bind jmsConsumer {
+service DriverNotificationService on jmsConsumer {
     // Triggered whenever an order is added to the 'OrderQueue'
-    onMessage(endpoint consumer, jms:Message message) {
+    resource function onMessage(jms:QueueReceiverCaller consumer, jms:Message message) returns error? {
         log:printInfo("Trip information received for Driver notification service notifying coordinating with Driver the trip info");
-        http:Request orderToDeliver;
+        http:Request orderToDeliver = new;
         // Retrieve the string payload using native function
         string personDetail = check message.getTextMessageContent();
-        log:printInfo("Trip Details: " + personDetail);     
+        log:printInfo("Trip Details: " + personDetail);
+        return;
     }   
 }
-
-
-
-
