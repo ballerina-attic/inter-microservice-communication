@@ -40,14 +40,10 @@ jms:Session jmsSession = new(jmsConnection, {
     });
 
 // Initialize a queue sender using the created session
-endpoint jms:QueueSender jmsTripDispatchOrder {
-    session:jmsSession, queueName:"trip-dispatcher"
-};
+jms:QueueSender jmsTripDispatchOrder = new(jmsSession, queueName = "trip-dispatcher");
 
 // Client endpoint to communicate with Airline reservation service
-endpoint http:Client passengerMgtEP {
-    url:"http://localhost:9091/passenger-management"
-};
+http:Client passengerMgtEP = new("http://localhost:9091/passenger-management");
 
 
 //@doker:Config {
@@ -63,37 +59,36 @@ endpoint http:Client passengerMgtEP {
 //}
 
 //@docker:Expose{}
-//endpoint http:Listener listener {
-//    port:9090
-//};
+//listener http:Listener httpListener = new(9090);
 
 // Service endpoint
-endpoint http:Listener listener {
-    port:9090
-};
+listener http:Listener httpListener = new(9090);
 
 // Trip manager service, which is managing trip requests received from the client 
-@http:ServiceConfig {basePath:"/trip-manager"}
-service<http:Service> TripManagement bind listener {
+@http:ServiceConfig {
+    basePath:"/trip-manager"
+}
+service TripManagement on httpListener {
     // Resource that allows users to place an order for a pickup
-    @http:ResourceConfig { methods: ["POST"], consumes: ["application/json"],
-        produces: ["application/json"], path : "/pickup" }
-    pickup(endpoint caller, http:Request request) {
-        http:Response response;
-        Pickup pickup;
+    @http:ResourceConfig {
+        path : "/pickup",
+        methods: ["POST"],
+        consumes: ["application/json"],
+        produces: ["application/json"]
+    }
+    resource function pickup(http:Caller caller, http:Request request) returns error? {
+        http:Response response = new;
         json reqPayload;
 
         // Try parsing the JSON payload from the request
-        match request.getJsonPayload() {
-            // Valid JSON payload
-            json payload => reqPayload = payload;
-            // NOT a valid JSON payload
-            any => {
-                response.statusCode = 400;
-                response.setJsonPayload({"Message":"Invalid payload - Not a valid JSON payload"});
-                _ = caller -> respond(response);
-                done;
-            }
+        var payload = request.getJsonPayload();
+        if (payload is json) {
+            reqPayload = payload;
+        } else {
+            response.statusCode = 400;
+            response.setJsonPayload({"Message":"Invalid payload - Not a valid JSON payload"});
+            checkpanic caller->respond(response);
+            return;
         }
 
         json name = reqPayload.Name;
@@ -105,23 +100,25 @@ service<http:Service> TripManagement bind listener {
         if (name == null || address == null || contact == null) {
             response.statusCode = 400;
             response.setJsonPayload({"Message":"Bad Request - Invalid Trip Request payload"});
-            _ = caller -> respond(response);
-            done;
+            checkpanic caller->respond(response);
+            return;
         }
 
         // Order details
-        pickup.customerName = name.toString();
-        pickup.address = address.toString();
-        pickup.phonenumber = contact.toString();
-    
+        Pickup pickup = {
+            customerName: name.toString(),
+            address: address.toString(),
+            phonenumber: contact.toString()
+        };
+
         log:printInfo("Calling passenger management service:");
       
         // call passanger-management and get passegner orginization claims
         json responseMessage;
-        http:Request passengerManagerReq;
-        json pickupjson =  check <json>pickup;
+        http:Request passengerManagerReq = new;
+        json pickupjson = check json.convert(pickup);
         passengerManagerReq.setJsonPayload(untaint pickupjson);
-        http:Response passengerResponse=  check passengerMgtEP -> post("/claims",passengerManagerReq);
+        http:Response passengerResponse=  check passengerMgtEP->post("/claims", passengerManagerReq);
         json passengerResponseJSON = check passengerResponse.getJsonPayload();
 
         // Dispatch to the dispatcher service
@@ -130,7 +127,7 @@ service<http:Service> TripManagement bind listener {
         // Send the message to the JMS queue
         
         log:printInfo("Hand over to the trip dispatcher to coordinate driver and  passenger:");
-        _ = jmsTripDispatchOrder -> send(queueMessage);
+        checkpanic jmsTripDispatchOrder->send(queueMessage);
 
         // Creating Trip
         // call Dispatcher and contacting Driver and Passenger
@@ -138,6 +135,7 @@ service<http:Service> TripManagement bind listener {
         // Send response to the user
         responseMessage = {"Message":"Trip information received"};
         response.setJsonPayload(responseMessage);
-        _ = caller -> respond(response);
+        checkpanic caller->respond(response);
+        return;
     }
 }
